@@ -1,0 +1,45 @@
+{
+  "name": "mxf",
+  "version": "0.0.4",
+  "description": "Luther library for processing off-chain MXF data",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "test": "jest --config jestconfig.json",
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postbuild": "npm run copy-files",
+    "copy-files": "copyfiles -u 1 src/**/*.wasm lib",
+    "clean": "rimraf lib/",
+    "postversion": ""
+  },
+  "keywords": [
+    "Luther Systems",
+    "DLT",
+    "GDPR"
+  ],
+  "author": "Sam Wood",
+  "license": "LicenseRef-LICENSE",
+  "devDependencies": {
+    "@types/jest": "^27.0.2",
+    "copyfiles": "^2.4.1",
+    "jest": "^27.5.1",
+    "prettier": "^2.4.1",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^27.0.7",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^4.5.2"
+  },
+  "files": [
+    "lib/**/*"
+  ],
+  "dependencies": {
+    "@types/golang-wasm-exec": "^1.15.0"
+  }
+}
