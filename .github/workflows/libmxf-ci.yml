@@ -12,4 +12,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3.5.0
     - name: Run CI tests
-      run: make citest
+      run: make go-citest
