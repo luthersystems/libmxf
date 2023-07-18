@@ -22,8 +22,10 @@ GO_TEST_TIMEOUT_10=${GO_TEST_BASE} -timeout 10m
 
 .PHONY: go-test
 go-test:
+	export GOPRIVATE="github.com/luthersystems/substrate"
 	${GO_TEST_TIMEOUT_10} ./...
 
 .PHONY: static-checks
 static-checks:
+	export GOPRIVATE="github.com/luthersystems/substrate"
 	./scripts/static-checks.sh
