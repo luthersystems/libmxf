@@ -1,0 +1,2 @@
+mxf-go.wasm filter=lfs diff=lfs merge=lfs -text
+decode-wapc.wasm filter=lfs diff=lfs merge=lfs -text
