@@ -21,13 +21,10 @@ go-citest: go-test
 js-citest: js-test
 	@
 
-GO_TEST_BASE=go test ${GO_TEST_FLAGS}
-GO_TEST_TIMEOUT_10=${GO_TEST_BASE} -timeout 10m
-
 .PHONY: go-test
 go-test:
-	export GOPRIVATE="github.com/luthersystems/substrate"
-	${GO_TEST_TIMEOUT_10} ./...
+	cd decode-js && make go-test
+	cd decode-go && make test
 
 .PHONY: static-checks
 static-checks:
@@ -36,4 +33,4 @@ static-checks:
 
 .PHONY: js-test
 js-test:
-	cd decode-js/mxf && npm install
+	cd decode-js && make js-test
