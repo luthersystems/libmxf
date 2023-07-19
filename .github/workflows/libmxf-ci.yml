@@ -1,0 +1,18 @@
+name: CI Test
+
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  test-go:
+    runs-on: ubuntu-latest
+    container:
+      image: luthersystems/build-go:v0.0.71
+    steps:
+    - uses: actions/checkout@v3.5.0
+    - uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    - name: Run CI tests
+      run: make go-citest
