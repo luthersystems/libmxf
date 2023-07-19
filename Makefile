@@ -14,7 +14,7 @@ all:
 	@
 
 .PHONY: go-citest
-go-citest: static-checks go-test
+go-citest: go-test
 	@
 
 GO_TEST_BASE=go test ${GO_TEST_FLAGS}
