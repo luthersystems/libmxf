@@ -16,3 +16,11 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     - name: Run CI tests
       run: make go-citest
+  test-js:
+    runs-on: ubuntu-latest
+    container:
+      image: luthersystems/build-js:v0.0.71
+    steps:
+    - uses: actions/checkout@v3.5.0
+    - name: Run CI tests
+      run: make js-citest
