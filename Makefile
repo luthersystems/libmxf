@@ -36,4 +36,4 @@ static-checks:
 
 .PHONY: js-test
 js-test:
-	cd decode-js/mxf && npm run lint && npm test
+	cd decode-js/mxf && npm install && npm run lint && npm test
