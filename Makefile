@@ -17,15 +17,20 @@ all:
 go-citest: go-test
 	@
 
-GO_TEST_BASE=go test ${GO_TEST_FLAGS}
-GO_TEST_TIMEOUT_10=${GO_TEST_BASE} -timeout 10m
+.PHONY: js-citest
+js-citest: js-test
+	@
 
 .PHONY: go-test
 go-test:
-	export GOPRIVATE="github.com/luthersystems/substrate"
-	${GO_TEST_TIMEOUT_10} ./...
+	cd decode-js && make go-test
+	cd decode-go && make test
 
 .PHONY: static-checks
 static-checks:
 	export GOPRIVATE="github.com/luthersystems/substrate"
 	./scripts/static-checks.sh
+
+.PHONY: js-test
+js-test:
+	cd decode-js && make js-test

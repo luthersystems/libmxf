@@ -5,7 +5,8 @@ test('decode', async () => {
 
   function getKey(dsid: string): string {
     const keys: { [dsid: string]: string } = {
-      '89871b002200cbd38dec6cc43988e687f0a6799e2734635fee7cc891eca1170d-1': '22c20ac7e93194e19661cb55fc3633bbfd1a44c82d852fc8ee5e160aaba7c9a0',
+      '89871b002200cbd38dec6cc43988e687f0a6799e2734635fee7cc891eca1170d-1':
+        '22c20ac7e93194e19661cb55fc3633bbfd1a44c82d852fc8ee5e160aaba7c9a0',
     };
     return keys[dsid];
   }
@@ -26,5 +27,7 @@ test('decode', async () => {
     ],
   });
 
-  expect(await mxf.decode(getKey, encMsg)).toBe('{"client_id":"dba7bd5f-7a8f-4797-9851-202885837845","client_originator":"cbfc1ad7-84ec-4a4b-8302-7b869c00bd8f","field_mask":["client_originator"]}');
+  expect(await mxf.decode(getKey, encMsg)).toBe(
+    '{"client_id":"dba7bd5f-7a8f-4797-9851-202885837845","client_originator":"cbfc1ad7-84ec-4a4b-8302-7b869c00bd8f","field_mask":["client_originator"]}',
+  );
 });

@@ -27,8 +27,8 @@ clean:
 run: ${WASM_RUNTIME} ${WASM_OUT}
 	node ${WASM_RUNTIME} ${WASM_OUT}
 
-.PHONY: test
-test:
+.PHONY: go-test
+go-test:
 	${WASM_ENV} go test ./app/...
 	go test ./server/...
 
@@ -42,3 +42,7 @@ ${WASM_RUNTIME}:
 
 ${WASM_OUT}: ${APP_DEPS} ${WASM_RUNTIME}
 	${WASM_ENV} go build -tags wasm -o $@ ./app
+
+.PHONY: js-test
+js-test:
+	cd mxf && make test
