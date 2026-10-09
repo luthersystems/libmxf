@@ -1,19 +1,24 @@
 module github.com/luthersystems/libmxf
 
-go 1.20
+go 1.26.0
 
 require (
-	github.com/luthersystems/elps v1.16.1
-	github.com/luthersystems/substrate v0.0.0-20230713235514-b20942c92a7c
-	github.com/stretchr/testify v1.7.1
-	github.com/wapc/wapc-go v0.6.1
+	github.com/luthersystems/elps v1.76.0
+	github.com/luthersystems/substrate v0.0.0-20231228215846-7596ed88379d
+	github.com/stretchr/testify v1.12.1
+	github.com/wapc/wapc-go v0.7.2
+	github.com/wapc/wapc-go/engines/wazero v0.0.0-20250220020831-a72aedbbe70d
 	github.com/wapc/wapc-guest-tinygo v0.3.3
 )
 
 require (
-	github.com/Workiva/go-datastructures v1.0.53 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/tetratelabs/wazero v1.3.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	github.com/Workiva/go-datastructures v1.1.5 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/tetratelabs/wazero v1.9.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 )
