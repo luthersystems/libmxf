@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/luthersystems/elps v1.76.0
-	github.com/luthersystems/substrate v0.0.0-20261009015752-4df03fbe7fda
+	github.com/luthersystems/substrate v0.0.0-20261009025325-d52430f860b1
 	github.com/stretchr/testify v1.12.1
 	github.com/wapc/wapc-go v0.7.2
 	github.com/wapc/wapc-go/engines/wazero v0.0.0-20250220020831-a72aedbbe70d
