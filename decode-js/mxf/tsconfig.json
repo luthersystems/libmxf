@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2015",
     "module": "commonjs",
     "declaration": true,
     "sourceMap": true,
     "outDir": "./lib",
+    "rootDir": "./src",
     "allowJs": true,
     "strict": true,
-    "lib": [ "es2015", "dom" ]
+    "lib": [ "es2015", "dom" ],
+    "types": [ "node", "jest", "golang-wasm-exec" ]
   },
   "include": ["src"],
   "exclude": ["node_modules", "**/__tests__/*", "**/wasm_exec.js"]
