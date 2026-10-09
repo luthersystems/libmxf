@@ -8,12 +8,12 @@ jobs:
   test-go:
     runs-on: ubuntu-latest
     container:
-      image: luthersystems/build-go:v0.0.72
+      image: luthersystems/build-go:v0.1.32
     steps:
-    - uses: actions/checkout@v3.5.0
+    - uses: actions/checkout@v7.0.1
       with:
         lfs: true
-    - uses: webfactory/ssh-agent@v0.8.0
+    - uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     - name: Run CI tests
@@ -21,9 +21,9 @@ jobs:
   test-js:
     runs-on: ubuntu-latest
     container:
-      image: luthersystems/build-js:v0.0.72
+      image: luthersystems/build-js:v0.1.32
     steps:
-    - uses: actions/checkout@v3.5.0
+    - uses: actions/checkout@v7.0.1
       with:
         lfs: true
     - name: Run CI tests
