@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: luthersystems/build-go:v0.1.32
+      # build-go v0.1.x runs as a non-root user, which cannot write the
+      # runner's file-command files that actions/checkout needs.
+      options: --user root
     steps:
     - uses: actions/checkout@v7.0.1
       with:
