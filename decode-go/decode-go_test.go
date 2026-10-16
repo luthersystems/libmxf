@@ -121,3 +121,12 @@ func BenchmarkDecode(b *testing.B) {
 		}
 	}
 }
+
+// TestDecodeUnknownKey checks that a message whose key the host does not
+// know fails with an error, not a guest panic.
+func TestDecodeUnknownKey(t *testing.T) {
+	noKey := func(string) string { return "" }
+	_, err := Decode(context.Background(), noKey, testMessage(t))
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), "unreachable", "the guest panicked")
+}

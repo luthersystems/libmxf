@@ -36,7 +36,7 @@ func decode(enc []byte) ([]byte, error) {
 
 	respVal := libmxf.MxfDecode(getKey, string(enc))
 
-	if len(respVal.Bytes()) == 0 {
+	if respVal.Type != lisp.LBytes || len(respVal.Bytes()) == 0 {
 		return nil, lisp.GoError(respVal)
 	}
 
