@@ -67,7 +67,7 @@ func TestDecodeCompilesOnce(t *testing.T) {
 	_, err := Decode(ctx, getTestKey, enc)
 	require.NoError(t, err)
 	first := time.Since(start)
-	module, err := compiledGuest()
+	module, err := compiledGuest(context.Background())
 	require.NoError(t, err)
 
 	start = time.Now()
@@ -76,7 +76,7 @@ func TestDecodeCompilesOnce(t *testing.T) {
 	second := time.Since(start)
 	assert.Equal(t, expected, decodedMsg)
 
-	again, err := compiledGuest()
+	again, err := compiledGuest(context.Background())
 	require.NoError(t, err)
 	assert.Same(t, module, again, "Decode compiled the guest again")
 	t.Logf("first Decode %v (includes the compile unless an earlier test ran), second Decode %v", first, second)
@@ -129,4 +129,28 @@ func TestDecodeUnknownKey(t *testing.T) {
 	_, err := Decode(context.Background(), noKey, testMessage(t))
 	require.Error(t, err)
 	assert.NotContains(t, err.Error(), "unreachable", "the guest panicked")
+}
+
+// TestDecodeLeavesCompileWaitWhenContextEnds holds the compile lock, as a
+// first compile does, and checks that a caller whose deadline passes while it
+// waits returns the context's error instead of waiting for the lock.
+func TestDecodeLeavesCompileWaitWhenContextEnds(t *testing.T) {
+	guestLock <- struct{}{}
+	defer func() { <-guestLock }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	_, err := Decode(ctx, getTestKey, testMessage(t))
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Less(t, time.Since(start), 5*time.Second)
+}
+
+// TestDecodeContextAlreadyDone checks that a caller whose context has ended
+// gets the context's error without waiting on the guest.
+func TestDecodeContextAlreadyDone(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := Decode(ctx, getTestKey, testMessage(t))
+	assert.ErrorIs(t, err, context.Canceled)
 }

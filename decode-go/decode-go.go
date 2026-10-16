@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/wapc/wapc-go"
 	"github.com/wapc/wapc-go/engines/wazero"
@@ -20,15 +19,22 @@ var guestDecodeWasm []byte
 // takes milliseconds. Each Decode gets its own instance, so concurrent calls
 // share no guest memory.
 var (
-	guestMu     sync.Mutex
+	// guestLock is a mutex that a waiter can leave when its context ends:
+	// hold it by sending, release it by receiving.
+	guestLock   = make(chan struct{}, 1)
 	guestModule wapc.Module
 )
 
 // compiledGuest returns the shared compiled guest, compiling it on the first
-// call. A failed compile is not cached, so a later call tries again.
-func compiledGuest() (wapc.Module, error) {
-	guestMu.Lock()
-	defer guestMu.Unlock()
+// call. A failed compile is not cached, so a later call tries again. A caller
+// whose ctx ends while another call compiles returns ctx.Err().
+func compiledGuest(ctx context.Context) (wapc.Module, error) {
+	select {
+	case guestLock <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	defer func() { <-guestLock }()
 	if guestModule != nil {
 		return guestModule, nil
 	}
@@ -47,9 +53,14 @@ func compiledGuest() (wapc.Module, error) {
 }
 
 // Decode decodes the MXF message enc, calling getKey for each data key the
-// message needs. It is safe for concurrent use.
+// message needs. It is safe for concurrent use. A caller whose ctx has ended
+// before the guest starts, or ends while it waits for the first compile,
+// gets ctx.Err(). A guest that is already running is not stopped.
 func Decode(ctx context.Context, getKey func(string) string, enc string) (string, error) {
-	module, err := compiledGuest()
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	module, err := compiledGuest(ctx)
 	if err != nil {
 		return "", err
 	}
