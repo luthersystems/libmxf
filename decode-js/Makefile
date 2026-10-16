@@ -41,7 +41,7 @@ ${WASM_RUNTIME}:
 	cp ${WASM_RUNTIME_SOURCE} $@
 
 ${WASM_OUT}: ${APP_DEPS} ${WASM_RUNTIME}
-	${WASM_ENV} go build -tags wasm -o $@ ./app
+	${WASM_ENV} go build -tags wasm -trimpath -o $@ ./app
 
 .PHONY: js-test
 js-test:
