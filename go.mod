@@ -8,7 +8,6 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/wapc/wapc-go v0.7.2
 	github.com/wapc/wapc-go/engines/wazero v0.0.0-20250220020831-a72aedbbe70d
-	github.com/wapc/wapc-guest-tinygo v0.3.3
 )
 
 require (
