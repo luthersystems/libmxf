@@ -56,8 +56,9 @@ func TestDecode(t *testing.T) {
 }
 
 // TestDecodeCompilesOnce checks that the guest is compiled once per process:
-// a second Decode reuses the compiled module and is much faster than a
-// compile.
+// a second Decode reuses the compiled module. It checks the module's
+// identity, not timing: an instantiation alone takes about 0.85 s under
+// -race, so a time bound would fail on a slow runner.
 func TestDecodeCompilesOnce(t *testing.T) {
 	enc := testMessage(t)
 	ctx := context.Background()
@@ -79,7 +80,6 @@ func TestDecodeCompilesOnce(t *testing.T) {
 	require.NoError(t, err)
 	assert.Same(t, module, again, "Decode compiled the guest again")
 	t.Logf("first Decode %v (includes the compile unless an earlier test ran), second Decode %v", first, second)
-	assert.Less(t, second, time.Second, "second Decode should not compile the guest")
 }
 
 // TestDecodeConcurrent checks that concurrent calls share the compiled guest
