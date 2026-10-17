@@ -2,4 +2,4 @@ build:
 	@echo "----------"
 	@echo "Building Go wasm Guest"
 	@echo "----------"
-	tinygo build -o decode-wapc.wasm -scheduler=none --no-debug -target=wasi main.go
+	GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -trimpath -ldflags=-s -o decode-wapc.wasm .

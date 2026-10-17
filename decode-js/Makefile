@@ -6,7 +6,7 @@ WASM_GOARCH=wasm
 WASM_ENV=GOOS=${WASM_GOOS} GOARCH=${WASM_GOARCH}
 
 GOROOT=$(shell go env GOROOT)
-WASM_ROOT=${GOROOT}/misc/wasm
+WASM_ROOT=${GOROOT}/lib/wasm
 
 # WASM_RUNTIME is a javascript module that is required to run compiled Go.
 WASM_RUNTIME=wasm_exec.js
@@ -41,7 +41,7 @@ ${WASM_RUNTIME}:
 	cp ${WASM_RUNTIME_SOURCE} $@
 
 ${WASM_OUT}: ${APP_DEPS} ${WASM_RUNTIME}
-	${WASM_ENV} go build -tags wasm -o $@ ./app
+	${WASM_ENV} go build -tags wasm -trimpath -o $@ ./app
 
 .PHONY: js-test
 js-test:

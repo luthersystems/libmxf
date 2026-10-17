@@ -8,4 +8,5 @@ all:
 
 .PHONY: test
 test:
-	npm install
+	npm ci
+	npm test

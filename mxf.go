@@ -8,7 +8,7 @@ import (
 	"github.com/luthersystems/elps/elpsutil"
 	"github.com/luthersystems/elps/lisp"
 	"github.com/luthersystems/elps/parser"
-	"github.com/luthersystems/substrate/chaincodes/substrate01/lib/shiro/libmxf"
+	"github.com/luthersystems/substrate/libmxf"
 )
 
 var env *lisp.LEnv

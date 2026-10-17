@@ -1,20 +1,33 @@
+// Command decode-wapc is the waPC guest that decodes MXF messages. Build it
+// with the standard Go toolchain as a WASI reactor:
+//
+//	GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o decode-wapc.wasm .
+//
+// The host instantiates WASI, calls _initialize (which runs package init),
+// then calls __guest_call for each request.
 package main
 
 import (
 	"github.com/luthersystems/elps/lisp"
 	"github.com/luthersystems/libmxf"
-	wapc "github.com/wapc/wapc-guest-tinygo"
 )
 
-func main() {
-	wapc.RegisterFunctions(wapc.Functions{
-		"decode": decode,
-	})
+func main() {}
+
+type guestFunction func(payload []byte) ([]byte, error)
+
+// functions maps a waPC operation name to its handler.
+var functions = map[string]guestFunction{}
+
+func registerFunction(name string, fn guestFunction) { functions[name] = fn }
+
+func init() {
+	registerFunction("decode", decode)
 }
 
 func decode(enc []byte) ([]byte, error) {
 	getKey := func(dsid string) string {
-		key, err := wapc.HostCall("", "libmxf", "get_key", []byte(dsid))
+		key, err := hostCall("", "libmxf", "get_key", []byte(dsid))
 		if err != nil {
 			return ""
 		}
@@ -23,7 +36,7 @@ func decode(enc []byte) ([]byte, error) {
 
 	respVal := libmxf.MxfDecode(getKey, string(enc))
 
-	if len(respVal.Bytes()) == 0 {
+	if respVal.Type != lisp.LBytes || len(respVal.Bytes()) == 0 {
 		return nil, lisp.GoError(respVal)
 	}
 
