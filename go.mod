@@ -2,6 +2,8 @@ module github.com/luthersystems/libmxf
 
 go 1.26.0
 
+toolchain go1.26.10
+
 require (
 	github.com/luthersystems/elps v1.76.0
 	github.com/luthersystems/substrate v0.0.0-20261009191133-58014067bd8b
