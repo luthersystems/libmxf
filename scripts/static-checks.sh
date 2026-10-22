@@ -7,3 +7,5 @@
 set -exuo pipefail
 
 golangci-lint run --timeout=5m -v
+# scripts/modzipcheck is its own module, so the run above does not reach it.
+(cd scripts/modzipcheck && golangci-lint run --timeout=5m -v)

@@ -18,14 +18,31 @@ jobs:
       # runner's file-command files that actions/checkout needs.
       options: --user root
     steps:
+    # No LFS, on purpose: a consumer's go get builds the module from the
+    # git tree and never fetches LFS content, so this job must see the same
+    # bytes. TestEmbeddedGuestIsWasm fails here if the embedded guest is ever
+    # an LFS pointer again (libmxf#12).
     - uses: actions/checkout@v7.0.1
       with:
-        lfs: true
+        lfs: false
     - uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     - name: Run CI tests
       run: make go-citest
+    # Rebuilds the guest from source and checks it against the pinned
+    # sha256 and the committed .gz, so the embedded wasm is this source.
+    - name: Verify the guest is built from this source
+      run: make -C decode-go/decode-wapc verify
+    # Builds the module zip from git, as go get does, and fails if Go code
+    # embeds a file that is an LFS pointer there (libmxf#12).
+    # The container runs as root over a workspace the runner owns, and
+    # actions/checkout marks it safe only in a temporary HOME, so git
+    # refuses it here without this.
+    - name: Check the module zip
+      run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        make modzip-check
   test-js:
     runs-on: ubuntu-latest
     container:

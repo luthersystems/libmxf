@@ -26,6 +26,13 @@ go-test:
 	cd decode-js && make go-test
 	cd decode-go && make test
 
+# modzip-check builds the module zip of HEAD the way go get does and fails if
+# Go code embeds a Git LFS pointer (libmxf#12). It reads the committed tree,
+# so commit before you run it.
+.PHONY: modzip-check
+modzip-check:
+	cd scripts/modzipcheck && go test . && go run . $(CURDIR) HEAD
+
 .PHONY: static-checks
 static-checks:
 	export GOPRIVATE="github.com/luthersystems/substrate"

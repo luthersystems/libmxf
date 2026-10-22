@@ -1,8 +1,11 @@
 package decode
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	_ "embed"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
@@ -11,8 +14,58 @@ import (
 	"github.com/wapc/wapc-go/engines/wazero"
 )
 
-//go:embed decode-wapc/decode-wapc.wasm
-var guestDecodeWasm []byte
+// The guest is embedded gzipped: 2.2 MB in place of 8.4 MB, so every binary
+// that links decode-go is about 6 MB smaller. It is inflated once, when the
+// guest is first compiled (guestWasm), which takes about 0.1 s next to a
+// compile of about 5 s.
+//
+// It is a normal git file, not a Git LFS file. The Go module zip is built
+// from the git tree, and the module proxy and go get never fetch LFS content,
+// so an LFS-tracked guest reaches consumers as a 130-byte pointer
+// (libmxf#12). make -C decode-go/decode-wapc build writes it.
+//
+//go:embed decode-wapc/decode-wapc.wasm.gz
+var guestDecodeWasmGz []byte
+
+// wasmMagic is the first four bytes of every wasm binary module.
+var wasmMagic = []byte("\x00asm")
+
+// lfsPointerPrefix is the first line of a Git LFS pointer file.
+// scripts/modzipcheck has the same prefix; keep the two in step.
+var lfsPointerPrefix = []byte("version https://git-lfs.github.com/spec/")
+
+// guestWasm inflates gz, the embedded guest, and checks that the result is a
+// wasm module. It names a Git LFS pointer, the one way this has failed,
+// because a gzip or wazero error does not say why the bytes are wrong.
+func guestWasm(gz []byte) ([]byte, error) {
+	if bytes.HasPrefix(gz, lfsPointerPrefix) {
+		return nil, errors.New("libmxf: the embedded decode-wapc.wasm.gz is a Git LFS pointer, not the guest: this libmxf build is broken, see libmxf#12")
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(gz))
+	if err != nil {
+		return nil, fmt.Errorf("libmxf: the embedded decode-wapc.wasm.gz is not gzip (first bytes %q): %w", head(gz), err)
+	}
+	// The gzip trailer's last four bytes are the inflated size mod 2^32.
+	// Growing the buffer to it once saves io.ReadAll's repeated copies of
+	// an 8 MB guest; the cap keeps a bad trailer from asking for much.
+	var buf bytes.Buffer
+	if len(gz) >= 4 {
+		buf.Grow(int(min(binary.LittleEndian.Uint32(gz[len(gz)-4:]), 64<<20)))
+	}
+	if _, err := buf.ReadFrom(zr); err != nil {
+		return nil, fmt.Errorf("libmxf: inflate the embedded decode-wapc.wasm.gz: %w", err)
+	}
+	wasm := buf.Bytes()
+	if !bytes.HasPrefix(wasm, wasmMagic) {
+		return nil, fmt.Errorf("libmxf: the embedded decode-wapc.wasm.gz does not hold a wasm module (first bytes %q)", head(wasm))
+	}
+	return wasm, nil
+}
+
+// head returns at most the first 16 bytes of b, for an error message.
+func head(b []byte) []byte {
+	return b[:min(len(b), 16)]
+}
 
 // The guest module is compiled once per process and shared by every Decode.
 // Compiling the 8.5 MB guest takes seconds; instantiating a compiled module
@@ -38,9 +91,17 @@ func compiledGuest(ctx context.Context) (wapc.Module, error) {
 	if guestModule != nil {
 		return guestModule, nil
 	}
+	// Inflated here, under the lock, on each compile attempt. Not caching
+	// it means the 8 MB of inflated bytes are garbage once the module is
+	// compiled; the cost is a 0.1 s inflate on each retry after a failed
+	// compile, which itself takes seconds.
+	wasm, err := guestWasm(guestDecodeWasmGz)
+	if err != nil {
+		return nil, err
+	}
 	// The module outlives the call that compiles it, so it does not take
 	// the caller's context.
-	module, err := wazero.Engine().New(context.Background(), hostCall, guestDecodeWasm, &wapc.ModuleConfig{
+	module, err := wazero.Engine().New(context.Background(), hostCall, wasm, &wapc.ModuleConfig{
 		Logger: wapc.PrintlnLogger,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,

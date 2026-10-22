@@ -1,2 +1,4 @@
-mxf-go.wasm filter=lfs diff=lfs merge=lfs -text
-decode-wapc.wasm filter=lfs diff=lfs merge=lfs -text
+# The guest is a normal git file, never Git LFS: go get builds the module
+# from the git tree and never fetches LFS content (libmxf#12). This rule
+# overrides any broader LFS rule.
+decode-wapc.wasm.gz -filter binary

@@ -1,7 +1,8 @@
 // Command decode-wapc is the waPC guest that decodes MXF messages. Build it
-// with the standard Go toolchain as a WASI reactor:
-//
-//	GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o decode-wapc.wasm .
+// with the standard Go toolchain as a WASI reactor (GOOS=wasip1,
+// -buildmode=c-shared) by running make build, which also gzips it to
+// decode-wapc.wasm.gz, the file decode-go embeds. The Makefile holds the one
+// copy of the flags that make the build reproducible.
 //
 // The host instantiates WASI, calls _initialize (which runs package init),
 // then calls __guest_call for each request.
