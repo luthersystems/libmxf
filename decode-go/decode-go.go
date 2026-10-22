@@ -5,9 +5,9 @@ import (
 	"compress/gzip"
 	"context"
 	_ "embed"
+	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/wapc/wapc-go"
@@ -16,8 +16,8 @@ import (
 
 // The guest is embedded gzipped: 2.2 MB in place of 8.4 MB, so every binary
 // that links decode-go is about 6 MB smaller. It is inflated once, when the
-// guest is first compiled (guestWasm), which takes tens of milliseconds next
-// to a compile of seconds.
+// guest is first compiled (guestWasm), which takes about 0.1 s next to a
+// compile of about 5 s.
 //
 // It is a normal git file, not a Git LFS file. The Go module zip is built
 // from the git tree, and the module proxy and go get never fetch LFS content,
@@ -45,10 +45,17 @@ func guestWasm(gz []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("libmxf: the embedded decode-wapc.wasm.gz is not gzip (first bytes %q): %w", head(gz), err)
 	}
-	wasm, err := io.ReadAll(zr)
-	if err != nil {
+	// The gzip trailer's last four bytes are the inflated size mod 2^32.
+	// Growing the buffer to it once saves io.ReadAll's repeated copies of
+	// an 8 MB guest; the cap keeps a bad trailer from asking for much.
+	var buf bytes.Buffer
+	if len(gz) >= 4 {
+		buf.Grow(int(min(binary.LittleEndian.Uint32(gz[len(gz)-4:]), 64<<20)))
+	}
+	if _, err := buf.ReadFrom(zr); err != nil {
 		return nil, fmt.Errorf("libmxf: inflate the embedded decode-wapc.wasm.gz: %w", err)
 	}
+	wasm := buf.Bytes()
 	if !bytes.HasPrefix(wasm, wasmMagic) {
 		return nil, fmt.Errorf("libmxf: the embedded decode-wapc.wasm.gz does not hold a wasm module (first bytes %q)", head(wasm))
 	}
@@ -84,9 +91,10 @@ func compiledGuest(ctx context.Context) (wapc.Module, error) {
 	if guestModule != nil {
 		return guestModule, nil
 	}
-	// Inflated here, under the lock and only until a compile succeeds, so
-	// it runs once per process like the compile; the inflated bytes are not
-	// kept once the module is compiled.
+	// Inflated here, under the lock, on each compile attempt. Not caching
+	// it means the 8 MB of inflated bytes are garbage once the module is
+	// compiled; the cost is a 0.1 s inflate on each retry after a failed
+	// compile, which itself takes seconds.
 	wasm, err := guestWasm(guestDecodeWasmGz)
 	if err != nil {
 		return nil, err

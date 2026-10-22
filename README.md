@@ -19,7 +19,7 @@ standard Go toolchain; TinyGo is not needed.
 The Go guest is committed gzipped, as `decode-wapc.wasm.gz`, so every binary
 that links `decode-go` is about 6 MB smaller (2.2 MB in place of 8.4 MB).
 `decode.Decode` inflates it once, before its first compile; that takes about
-50 ms, next to a compile of about 5 s. A rebuild must also update the pinned
+0.1 s, next to a compile of about 5 s. A rebuild must also update the pinned
 sha256 of the inflated wasm, `guestSHA256` in `decode-go/embed_test.go`.
 
 It is a normal git file, not a Git LFS file.

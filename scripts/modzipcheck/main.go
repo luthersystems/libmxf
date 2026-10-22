@@ -39,7 +39,7 @@ import (
 const modulePath = "github.com/luthersystems/libmxf"
 
 // lfsPointerPrefix is the first line of a Git LFS pointer file. decode-go's
-// checkGuest has the same prefix; keep the two in step. They are separate
+// guestWasm checks the same prefix; keep the two in step. They are separate
 // modules, so they cannot share it.
 var lfsPointerPrefix = []byte("version https://git-lfs.github.com/spec/")
 
@@ -108,11 +108,11 @@ func check(repoRoot, revision string) error {
 				bad = append(bad, fmt.Sprintf("%s embeds %s, which is not a file in the zip", name, target))
 			case bytes.HasPrefix(content, lfsPointerPrefix):
 				bad = append(bad, fmt.Sprintf("%s embeds %s, which is a Git LFS pointer in the zip", name, target))
-			case strings.HasSuffix(target, ".gz") && !inflates(content):
-				// decode-go embeds its guest gzipped; a truncated or
-				// mangled .gz is as broken as a pointer.
-				bad = append(bad, fmt.Sprintf("%s embeds %s, which does not inflate", name, target))
 			default:
+				if problem := checkContent(target, content); problem != "" {
+					bad = append(bad, fmt.Sprintf("%s embeds %s, %s", name, target, problem))
+					continue
+				}
 				fmt.Printf("ok: %s embeds %s (%d bytes)\n", name, target, len(content))
 			}
 		}
@@ -158,12 +158,27 @@ func embedPatterns(name string, src []byte) ([]string, error) {
 	return patterns, nil
 }
 
-// inflates reports whether b is a complete gzip stream.
-func inflates(b []byte) bool {
-	zr, err := gzip.NewReader(bytes.NewReader(b))
-	if err != nil {
-		return false
+// checkContent returns what is wrong with an embedded file, or "". decode-go
+// embeds its guest gzipped, so a .gz is inflated and its content checked
+// too: a gzip of a pointer, or a truncated .gz, is as broken as a pointer.
+// A .wasm, inflated or not, must start with the wasm magic.
+func checkContent(target string, content []byte) string {
+	if base, ok := strings.CutSuffix(target, ".gz"); ok {
+		zr, err := gzip.NewReader(bytes.NewReader(content))
+		if err != nil {
+			return "which is not gzip"
+		}
+		inflated, err := io.ReadAll(zr)
+		if err != nil {
+			return "which does not inflate"
+		}
+		if bytes.HasPrefix(inflated, lfsPointerPrefix) {
+			return "which inflates to a Git LFS pointer"
+		}
+		target, content = base, inflated
 	}
-	_, err = io.Copy(io.Discard, zr)
-	return err == nil
+	if strings.HasSuffix(target, ".wasm") && !bytes.HasPrefix(content, []byte("\x00asm")) {
+		return "which is not a wasm module"
+	}
+	return ""
 }
