@@ -3,6 +3,9 @@
 //
 //	GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o decode-wapc.wasm .
 //
+// make build does that and gzips the result to decode-wapc.wasm.gz, the file
+// decode-go embeds.
+//
 // The host instantiates WASI, calls _initialize (which runs package init),
 // then calls __guest_call for each request.
 package main

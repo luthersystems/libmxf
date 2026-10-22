@@ -1,4 +1,4 @@
 # The guest is a normal git file, never Git LFS: go get builds the module
 # from the git tree and never fetches LFS content (libmxf#12). This rule
-# overrides any broader *.wasm LFS rule.
-decode-wapc.wasm -filter binary
+# overrides any broader LFS rule.
+decode-wapc.wasm.gz -filter binary

@@ -20,6 +20,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -107,6 +108,10 @@ func check(repoRoot, revision string) error {
 				bad = append(bad, fmt.Sprintf("%s embeds %s, which is not a file in the zip", name, target))
 			case bytes.HasPrefix(content, lfsPointerPrefix):
 				bad = append(bad, fmt.Sprintf("%s embeds %s, which is a Git LFS pointer in the zip", name, target))
+			case strings.HasSuffix(target, ".gz") && !inflates(content):
+				// decode-go embeds its guest gzipped; a truncated or
+				// mangled .gz is as broken as a pointer.
+				bad = append(bad, fmt.Sprintf("%s embeds %s, which does not inflate", name, target))
 			default:
 				fmt.Printf("ok: %s embeds %s (%d bytes)\n", name, target, len(content))
 			}
@@ -151,4 +156,14 @@ func embedPatterns(name string, src []byte) ([]string, error) {
 		}
 	}
 	return patterns, nil
+}
+
+// inflates reports whether b is a complete gzip stream.
+func inflates(b []byte) bool {
+	zr, err := gzip.NewReader(bytes.NewReader(b))
+	if err != nil {
+		return false
+	}
+	_, err = io.Copy(io.Discard, zr)
+	return err == nil
 }

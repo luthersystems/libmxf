@@ -1,0 +1,2 @@
+# The build intermediate; decode-wapc.wasm.gz is what is embedded.
+decode-wapc.wasm
