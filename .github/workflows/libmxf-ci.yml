@@ -30,6 +30,10 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     - name: Run CI tests
       run: make go-citest
+    # Builds the module zip from git, as go get does, and fails if Go code
+    # embeds a file that is an LFS pointer there (libmxf#12).
+    - name: Check the module zip
+      run: make modzip-check
   test-js:
     runs-on: ubuntu-latest
     container:
