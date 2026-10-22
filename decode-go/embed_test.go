@@ -1,7 +1,6 @@
 package decode
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,10 +10,9 @@ import (
 // The Go module zip holds what the git tree holds, so a guest tracked by Git
 // LFS reaches every consumer as a 130-byte LFS pointer (libmxf#12). CI runs
 // this test on a checkout without LFS, which sees the same bytes a consumer
-// does.
+// does. A local checkout with LFS content passes it either way; make
+// modzip-check is the local check that reads what consumers get.
 func TestEmbeddedGuestIsWasm(t *testing.T) {
-	require.True(t, bytes.HasPrefix(guestDecodeWasm, wasmMagic),
-		"decode-wapc.wasm does not start with the wasm magic; first bytes: %q", head(guestDecodeWasm))
 	require.NoError(t, checkGuest(guestDecodeWasm))
 }
 

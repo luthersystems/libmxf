@@ -24,6 +24,7 @@ var guestDecodeWasm []byte
 var wasmMagic = []byte("\x00asm")
 
 // lfsPointerPrefix is the first line of a Git LFS pointer file.
+// scripts/modzipcheck has the same prefix; keep the two in step.
 var lfsPointerPrefix = []byte("version https://git-lfs.github.com/spec/")
 
 // checkGuest reports an error when wasm is not a wasm module. It names a Git
@@ -34,7 +35,7 @@ func checkGuest(wasm []byte) error {
 		return nil
 	}
 	if bytes.HasPrefix(wasm, lfsPointerPrefix) {
-		return errors.New("libmxf: the embedded decode-wapc.wasm is a Git LFS pointer, not the wasm module; use a libmxf release after v0.1.0 (libmxf#12)")
+		return errors.New("libmxf: the embedded decode-wapc.wasm is a Git LFS pointer, not the wasm module: this libmxf build is broken, see libmxf#12")
 	}
 	return fmt.Errorf("libmxf: the embedded decode-wapc.wasm is not a wasm module (first bytes %q)", head(wasm))
 }

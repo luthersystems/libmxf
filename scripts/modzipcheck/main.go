@@ -21,11 +21,12 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"io"
 	"maps"
 	"os"
 	"path"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -35,12 +36,10 @@ import (
 
 const modulePath = "github.com/luthersystems/libmxf"
 
+// lfsPointerPrefix is the first line of a Git LFS pointer file. decode-go's
+// checkGuest has the same prefix; keep the two in step. They are separate
+// modules, so they cannot share it.
 var lfsPointerPrefix = []byte("version https://git-lfs.github.com/spec/")
-
-// embedRE matches a //go:embed line. Patterns are split on spaces; quoted
-// patterns and globs are not used in libmxf, and a pattern this does not
-// resolve fails the check, so a new form cannot pass unchecked.
-var embedRE = regexp.MustCompile(`(?m)^//go:embed\s+(.+)$`)
 
 func main() {
 	if len(os.Args) != 3 {
@@ -54,6 +53,12 @@ func main() {
 }
 
 func check(repoRoot, revision string) error {
+	// CreateFromVCS runs git archive, which applies the LFS smudge filter
+	// where git-lfs is installed without --skip, and so would put the real
+	// content back in the zip. The proxy never smudges; neither may we.
+	if err := os.Setenv("GIT_LFS_SKIP_SMUDGE", "1"); err != nil {
+		return err
+	}
 	// The version only names the zip's top directory; any valid one works.
 	m := module.Version{Path: modulePath, Version: "v0.0.0-modzipcheck"}
 	var buf bytes.Buffer
@@ -82,19 +87,21 @@ func check(repoRoot, revision string) error {
 		if !strings.HasSuffix(name, ".go") {
 			continue
 		}
-		for _, match := range embedRE.FindAllSubmatch(files[name], -1) {
-			for _, pattern := range strings.Fields(string(match[1])) {
-				target := path.Join(path.Dir(name), pattern)
-				embedded[target] = true
-				content, ok := files[target]
-				switch {
-				case !ok:
-					bad = append(bad, fmt.Sprintf("%s embeds %s, which is not a file in the zip", name, target))
-				case bytes.HasPrefix(content, lfsPointerPrefix):
-					bad = append(bad, fmt.Sprintf("%s embeds %s, which is a Git LFS pointer in the zip", name, target))
-				default:
-					fmt.Printf("ok: %s embeds %s (%d bytes)\n", name, target, len(content))
-				}
+		patterns, err := embedPatterns(name, files[name])
+		if err != nil {
+			return err
+		}
+		for _, pattern := range patterns {
+			target := path.Join(path.Dir(name), pattern)
+			embedded[target] = true
+			content, ok := files[target]
+			switch {
+			case !ok:
+				bad = append(bad, fmt.Sprintf("%s embeds %s, which is not a file in the zip", name, target))
+			case bytes.HasPrefix(content, lfsPointerPrefix):
+				bad = append(bad, fmt.Sprintf("%s embeds %s, which is a Git LFS pointer in the zip", name, target))
+			default:
+				fmt.Printf("ok: %s embeds %s (%d bytes)\n", name, target, len(content))
 			}
 		}
 	}
@@ -116,4 +123,25 @@ func readZipFile(f *zip.File) ([]byte, error) {
 	}
 	defer rc.Close()
 	return io.ReadAll(rc)
+}
+
+// embedPatterns returns the patterns of the //go:embed directives in a Go
+// file. It reads comments with go/parser, so a //go:embed line inside a
+// string literal or a block comment does not count. Patterns are split on
+// spaces; libmxf uses no quoted patterns, globs or directories, and a pattern
+// that names no file fails the check, so a new form cannot pass unchecked.
+func embedPatterns(name string, src []byte) ([]string, error) {
+	f, err := parser.ParseFile(token.NewFileSet(), name, src, parser.ParseComments)
+	if err != nil {
+		return nil, fmt.Errorf("parse %s: %w", name, err)
+	}
+	var patterns []string
+	for _, group := range f.Comments {
+		for _, c := range group.List {
+			if rest, ok := strings.CutPrefix(c.Text, "//go:embed "); ok {
+				patterns = append(patterns, strings.Fields(rest)...)
+			}
+		}
+	}
+	return patterns, nil
 }
