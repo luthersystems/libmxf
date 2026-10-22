@@ -13,8 +13,15 @@ export GOPRIVATE="github.com/luthersystems/substrate"
 
 ## Rebuilding the decoder wasm
 
-Both decoders embed a wasm build of the MXF codec, committed through Git LFS.
-They build with the standard Go toolchain; TinyGo is not needed.
+Both decoders embed a wasm build of the MXF codec. They build with the
+standard Go toolchain; TinyGo is not needed.
+
+The Go guest, `decode-wapc.wasm`, is a normal git file, not a Git LFS file.
+`go get` and the Go module proxy build the module from the git tree and never
+fetch LFS content, so an LFS-tracked guest reaches every consumer as a
+130-byte pointer (libmxf#12). Do not track it with LFS again; the Go CI job
+checks out without LFS to catch that. The JavaScript `app.wasm` stays in LFS,
+because npm publishes it from a full checkout and no Go code embeds it.
 
 | Decoder | wasm | Rebuild |
 |---|---|---|

@@ -18,9 +18,13 @@ jobs:
       # runner's file-command files that actions/checkout needs.
       options: --user root
     steps:
+    # No LFS, on purpose: a consumer's go get builds the module from the
+    # git tree and never fetches LFS content, so this job must see the same
+    # bytes. TestEmbeddedGuestIsWasm fails here if the embedded guest is ever
+    # an LFS pointer again (libmxf#12).
     - uses: actions/checkout@v7.0.1
       with:
-        lfs: true
+        lfs: false
     - uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}

@@ -1,6 +1,7 @@
 package decode
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"errors"
@@ -11,8 +12,37 @@ import (
 	"github.com/wapc/wapc-go/engines/wazero"
 )
 
+// The guest is a normal git file, not a Git LFS file. The Go module zip is
+// built from the git tree, and the module proxy and go get never fetch LFS
+// content, so an LFS-tracked guest reaches consumers as a 130-byte pointer
+// (libmxf#12).
+//
 //go:embed decode-wapc/decode-wapc.wasm
 var guestDecodeWasm []byte
+
+// wasmMagic is the first four bytes of every wasm binary module.
+var wasmMagic = []byte("\x00asm")
+
+// lfsPointerPrefix is the first line of a Git LFS pointer file.
+var lfsPointerPrefix = []byte("version https://git-lfs.github.com/spec/")
+
+// checkGuest reports an error when wasm is not a wasm module. It names a Git
+// LFS pointer, the one way this has failed, because a wazero compile error
+// does not say why the bytes are wrong.
+func checkGuest(wasm []byte) error {
+	if bytes.HasPrefix(wasm, wasmMagic) {
+		return nil
+	}
+	if bytes.HasPrefix(wasm, lfsPointerPrefix) {
+		return errors.New("libmxf: the embedded decode-wapc.wasm is a Git LFS pointer, not the wasm module; use a libmxf release after v0.1.0 (libmxf#12)")
+	}
+	return fmt.Errorf("libmxf: the embedded decode-wapc.wasm is not a wasm module (first bytes %q)", head(wasm))
+}
+
+// head returns at most the first 16 bytes of b, for an error message.
+func head(b []byte) []byte {
+	return b[:min(len(b), 16)]
+}
 
 // The guest module is compiled once per process and shared by every Decode.
 // Compiling the 8.5 MB guest takes seconds; instantiating a compiled module
@@ -37,6 +67,9 @@ func compiledGuest(ctx context.Context) (wapc.Module, error) {
 	defer func() { <-guestLock }()
 	if guestModule != nil {
 		return guestModule, nil
+	}
+	if err := checkGuest(guestDecodeWasm); err != nil {
+		return nil, err
 	}
 	// The module outlives the call that compiles it, so it does not take
 	// the caller's context.
