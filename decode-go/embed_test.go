@@ -13,9 +13,11 @@ import (
 
 // guestSHA256 is the sha256 of the inflated guest, decode-wapc.wasm. A
 // change to the embedded guest must change this line too, so a review sees
-// it, and a corrupt or swapped .gz fails here. Rebuild with
-// make -C decode-go/decode-wapc build, then set this to the sha256 it prints.
-const guestSHA256 = "3116e55d802b34478b510c4f876cc346500d4a03d4dd1d1d0259d8e50defb509"
+// it, and a corrupt or swapped .gz fails here. The build is reproducible, so
+// make -C decode-go/decode-wapc verify (run in CI) checks that this source
+// builds this wasm. Rebuild with make -C decode-go/decode-wapc build, then set
+// this to the sha256 it prints.
+const guestSHA256 = "8e7b0cc289775cc8916e8643df9afc6bbc65d7165b8c6a884195555da8ca97c7"
 
 // TestEmbeddedGuestIsWasm checks that the embedded guest inflates to the
 // pinned wasm module. The Go module zip holds what the git tree holds, so a

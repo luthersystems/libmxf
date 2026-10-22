@@ -30,6 +30,10 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     - name: Run CI tests
       run: make go-citest
+    # Rebuilds the guest from source and checks it against the pinned
+    # sha256 and the committed .gz, so the embedded wasm is this source.
+    - name: Verify the guest is built from this source
+      run: make -C decode-go/decode-wapc verify
     # Builds the module zip from git, as go get does, and fails if Go code
     # embeds a file that is an LFS pointer there (libmxf#12).
     # The container runs as root over a workspace the runner owns, and
