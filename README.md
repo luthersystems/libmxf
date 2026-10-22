@@ -22,7 +22,7 @@ that links `decode-go` is about 6 MB smaller (2.2 MB in place of 8.4 MB).
 0.1 s, next to a compile of about 5 s. A rebuild must also update the pinned
 sha256 of the inflated wasm, `guestSHA256` in `decode-go/embed_test.go`.
 The build is reproducible (no paths, git stamp or build ID in the wasm, and
-go.mod pins the toolchain), so `make -C decode-go/decode-wapc verify`, run
+the Makefile builds with go.mod's exact toolchain), so `make -C decode-go/decode-wapc verify`, run
 in CI, checks that the committed guest is built from this source.
 
 It is a normal git file, not a Git LFS file.
