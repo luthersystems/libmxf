@@ -31,7 +31,7 @@ go-test:
 # so commit before you run it.
 .PHONY: modzip-check
 modzip-check:
-	cd scripts/modzipcheck && go run . ../.. HEAD
+	cd scripts/modzipcheck && go run . $(CURDIR) HEAD
 
 .PHONY: static-checks
 static-checks:

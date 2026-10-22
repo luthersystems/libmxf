@@ -26,6 +26,7 @@ import (
 	"io"
 	"maps"
 	"os"
+	"os/exec"
 	"path"
 	"slices"
 	"strings"
@@ -58,6 +59,12 @@ func check(repoRoot, revision string) error {
 	// content back in the zip. The proxy never smudges; neither may we.
 	if err := os.Setenv("GIT_LFS_SKIP_SMUDGE", "1"); err != nil {
 		return err
+	}
+	// CreateFromVCS hides git's error behind "could not find a recognized
+	// version control system". Ask git first, so a failure (in CI, most
+	// often "dubious ownership") says what git said.
+	if out, err := exec.Command("git", "-C", repoRoot, "rev-parse", "--git-dir").CombinedOutput(); err != nil {
+		return fmt.Errorf("git rev-parse in %s: %w: %s", repoRoot, err, bytes.TrimSpace(out))
 	}
 	// The version only names the zip's top directory; any valid one works.
 	m := module.Version{Path: modulePath, Version: "v0.0.0-modzipcheck"}
