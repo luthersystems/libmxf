@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 )
 
 var (
@@ -16,6 +17,13 @@ var (
 func main() {
 	flag.Parse()
 	log.Printf("listening on %q...", *listen)
-	err := http.ListenAndServe(*listen, http.FileServer(http.Dir(*dir)))
+	// ReadHeaderTimeout: without it a client that never finishes its headers
+	// holds a connection open for ever (gosec G114, slowloris).
+	srv := &http.Server{
+		Addr:              *listen,
+		Handler:           http.FileServer(http.Dir(*dir)),
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	err := srv.ListenAndServe()
 	log.Fatalln(err)
 }
