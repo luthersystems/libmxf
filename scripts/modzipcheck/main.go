@@ -64,7 +64,7 @@ func check(repoRoot, revision string) error {
 	// CreateFromVCS hides git's error behind "could not find a recognized
 	// version control system". Ask git first, so a failure (in CI, most
 	// often "dubious ownership") says what git said.
-	if out, err := exec.Command("git", "-C", repoRoot, "rev-parse", "--git-dir").CombinedOutput(); err != nil {
+	if out, err := exec.Command("git", "-C", repoRoot, "rev-parse", "--git-dir").CombinedOutput(); err != nil { //nolint:gosec // G204: fixed git command; repoRoot is the operator's own checkout
 		return fmt.Errorf("git rev-parse in %s: %w: %s", repoRoot, err, bytes.TrimSpace(out))
 	}
 	// The version only names the zip's top directory; any valid one works.
