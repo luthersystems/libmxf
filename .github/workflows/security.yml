@@ -30,8 +30,13 @@ jobs:
     permissions:
       contents: read
       issues: write # the security-drift issue on scheduled runs
+      id-token: write # auto-fix: AWS role for Bedrock and the Claude App token
     uses: luthersystems/.github/.github/workflows/security.yml@v1
     with:
+      # After a scheduled scan of main fails, Claude opens a PR for a safe
+      # dependency bump, or comments on the security-drift issue when the
+      # fix needs a person. It never merges.
+      autofix: true
       # libmxf imports substrate, which imports license; both are private.
       goprivate: github.com/luthersystems/substrate,github.com/luthersystems/license
     secrets:
