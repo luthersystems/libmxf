@@ -1,0 +1,7 @@
+# gitleaks false positives. One fingerprint per line, from the Security
+# workflow's log. Add one only after you confirm the value is not a secret.
+
+# testKey is a fixed AES test key that only decodes the checked-in sample
+# payload in this test. It was never a production key, so there is nothing
+# to rotate; moving it out of the test would only hide the fixture.
+decode-go/decode-go_test.go:generic-api-key:17
