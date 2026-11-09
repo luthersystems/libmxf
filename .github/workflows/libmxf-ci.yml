@@ -39,6 +39,9 @@ jobs:
         cfg="${GIT_SSH_COMMAND#ssh -F }"
         ls -la "$(dirname "$cfg")"
         ssh -V
+        echo "HOME=$HOME"; id; git --version
+        git config --show-origin --list | grep -i insteadof || echo "no insteadof"
+        git ls-remote --get-url https://github.com/luthersystems/substrate
         for f in "$(dirname "$cfg")"/key-*; do ssh-keygen -l -f "$f" || echo "cannot read $f"; done
         for h in key-luthersystems--substrate.github.com key-luthersystems--license.github.com; do ssh -v -F "$cfg" -T "git@$h" 2>&1 | grep -vE 'debug1: (Reading|kex|SSH2_MSG|Remote protocol|compat|Local version|Connecting|Connection established|identity file .* type -1)' || true; done
     - name: Run CI tests
