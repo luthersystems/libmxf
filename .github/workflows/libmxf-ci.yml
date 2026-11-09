@@ -30,7 +30,7 @@ jobs:
     # makes both (common-infrastructure github-org-admin/deploy_keys.json),
     # and this action, the one the shared security workflow uses, gives
     # each its own SSH alias.
-    - uses: luthersystems/.github/actions/go-private-modules@86b8f9e7ca8e828f5f8fed988bed8b6df1d07dd9
+    - uses: luthersystems/.github/actions/go-private-modules@15e080613871e37936a14eb737f05b39f92bd2db
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
         goprivate: github.com/luthersystems/substrate,github.com/luthersystems/license
@@ -40,7 +40,7 @@ jobs:
         ls -la "$(dirname "$cfg")"
         ssh -V
         echo "HOME=$HOME"; id; git --version
-        echo "NOSYSTEM=${GIT_CONFIG_NOSYSTEM:-}"; cat /etc/gitconfig
+        echo "SYS=${GIT_CONFIG_SYSTEM:-}"; cat "$GIT_CONFIG_SYSTEM"
         git ls-remote --get-url https://github.com/luthersystems/substrate
         for f in "$(dirname "$cfg")"/key-*; do ssh-keygen -l -f "$f" || echo "cannot read $f"; done
         for h in key-luthersystems--substrate.github.com key-luthersystems--license.github.com; do ssh -v -F "$cfg" -T "git@$h" 2>&1 | grep -vE 'debug1: (Reading|kex|SSH2_MSG|Remote protocol|compat|Local version|Connecting|Connection established|identity file .* type -1)' || true; done
