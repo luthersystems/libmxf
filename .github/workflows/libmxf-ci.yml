@@ -34,6 +34,13 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
         goprivate: github.com/luthersystems/substrate,github.com/luthersystems/license
+    - name: Debug SSH (temporary)
+      run: |
+        cfg="${GIT_SSH_COMMAND#ssh -F }"
+        ls -la "$(dirname "$cfg")"
+        ssh -V
+        for f in "$(dirname "$cfg")"/key-*; do ssh-keygen -l -f "$f" || echo "cannot read $f"; done
+        for h in key-luthersystems--substrate.github.com key-luthersystems--license.github.com; do ssh -v -F "$cfg" -T "git@$h" 2>&1 | grep -vE 'debug1: (Reading|kex|SSH2_MSG|Remote protocol|compat|Local version|Connecting|Connection established|identity file .* type -1)' || true; done
     - name: Run CI tests
       run: make go-citest
     # Rebuilds the guest from source and checks it against the pinned
