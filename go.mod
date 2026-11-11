@@ -2,7 +2,7 @@ module github.com/luthersystems/libmxf
 
 go 1.26.0
 
-toolchain go1.26.10
+toolchain go1.26.11
 
 require (
 	github.com/luthersystems/elps v1.76.0
