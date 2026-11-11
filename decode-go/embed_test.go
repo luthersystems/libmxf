@@ -17,7 +17,7 @@ import (
 // make -C decode-go/decode-wapc verify (run in CI) checks that this source
 // builds this wasm. Rebuild with make -C decode-go/decode-wapc build, then set
 // this to the sha256 it prints.
-const guestSHA256 = "19efa4b627dba0f5c5d2eb2ebeb8042fdfc102d4ec012dc8c431e81366ecec2b"
+const guestSHA256 = "8ea27aaf7b167fc38dbde1fe0495334667db202dd79906a7eb5b9633806c8f3a"
 
 // TestEmbeddedGuestIsWasm checks that the embedded guest inflates to the
 // pinned wasm module. The Go module zip holds what the git tree holds, so a
