@@ -21,6 +21,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -64,7 +65,7 @@ func check(repoRoot, revision string) error {
 	// CreateFromVCS hides git's error behind "could not find a recognized
 	// version control system". Ask git first, so a failure (in CI, most
 	// often "dubious ownership") says what git said.
-	if out, err := exec.Command("git", "-C", repoRoot, "rev-parse", "--git-dir").CombinedOutput(); err != nil { //nolint:gosec // G204: fixed git command; repoRoot is the operator's own checkout
+	if out, err := exec.CommandContext(context.Background(), "git", "-C", repoRoot, "rev-parse", "--git-dir").CombinedOutput(); err != nil { //nolint:gosec // G204: fixed git command; repoRoot is the operator's own checkout
 		return fmt.Errorf("git rev-parse in %s: %w: %s", repoRoot, err, bytes.TrimSpace(out))
 	}
 	// The version only names the zip's top directory; any valid one works.
@@ -133,7 +134,9 @@ func readZipFile(f *zip.File) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rc.Close()
+	// A zip entry opened only to read has nothing to flush, so a Close
+	// error cannot change what ReadAll returned.
+	defer func() { _ = rc.Close() }()
 	return io.ReadAll(rc)
 }
 

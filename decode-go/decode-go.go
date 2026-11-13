@@ -130,7 +130,10 @@ func Decode(ctx context.Context, getKey func(string) string, enc string) (string
 	if err != nil {
 		return "", err
 	}
-	defer instance.Close(ctx)
+	// The result (or error) of Invoke is what the caller asked for, and Decode
+	// has no way to report a later Close error with it. The old code dropped
+	// it too; this only makes that explicit.
+	defer func() { _ = instance.Close(ctx) }()
 
 	// The shared host handler reads this call's getKey from the context
 	// the guest's host calls run under.
@@ -152,7 +155,10 @@ var errNoGetKey = errors.New("no getKey for this call")
 
 // hostCall answers the guest's host calls. waPC runs it under the context
 // passed to Invoke.
-func hostCall(ctx context.Context, binding, namespace, operation string, payload []byte) ([]byte, error) {
+//
+// The five arguments are waPC's HostCallHandler signature, which this
+// function must match.
+func hostCall(ctx context.Context, binding, namespace, operation string, payload []byte) ([]byte, error) { //nolint:revive // argument-limit: waPC fixes the signature
 	switch namespace {
 	case "libmxf":
 		switch operation {

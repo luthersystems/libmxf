@@ -49,10 +49,18 @@ func testMessage(t testing.TB) string {
 	return string(b)
 }
 
+// assertDecoded checks Decode's output byte for byte. It is JSON, but
+// consumers may compare, hash or store the string, so a change in key order,
+// spacing or escaping must fail here, which JSONEq would accept.
+func assertDecoded(t *testing.T, got string) {
+	t.Helper()
+	assert.Equal(t, expected, got, "Decoded message did not match expected") //nolint:testifylint // encoded-compare: the exact bytes are the contract, not only the JSON value
+}
+
 func TestDecode(t *testing.T) {
 	decodedMsg, err := Decode(context.Background(), getTestKey, testMessage(t))
 	require.NoError(t, err, "Decode failed")
-	assert.Equal(t, expected, decodedMsg, "Decoded message did not match expected")
+	assertDecoded(t, decodedMsg)
 }
 
 // TestDecodeCompilesOnce checks that the guest is compiled once per process:
@@ -74,7 +82,7 @@ func TestDecodeCompilesOnce(t *testing.T) {
 	decodedMsg, err := Decode(ctx, getTestKey, enc)
 	require.NoError(t, err)
 	second := time.Since(start)
-	assert.Equal(t, expected, decodedMsg)
+	assertDecoded(t, decodedMsg)
 
 	again, err := compiledGuest(context.Background())
 	require.NoError(t, err)
@@ -90,9 +98,9 @@ func TestDecodeConcurrent(t *testing.T) {
 	const n = 8
 	var calls [n]atomic.Int32
 	var wg sync.WaitGroup
-	for i := 0; i < n; i++ {
+	for i := range n {
 		wg.Add(1)
-		go func(i int) {
+		go func() {
 			defer wg.Done()
 			getKey := func(dsid string) string {
 				calls[i].Add(1)
@@ -100,8 +108,8 @@ func TestDecodeConcurrent(t *testing.T) {
 			}
 			decodedMsg, err := Decode(context.Background(), getKey, enc)
 			assert.NoError(t, err)
-			assert.Equal(t, expected, decodedMsg)
-		}(i)
+			assertDecoded(t, decodedMsg)
+		}()
 	}
 	wg.Wait()
 	for i := range calls {
@@ -115,7 +123,7 @@ func BenchmarkDecode(b *testing.B) {
 	_, err := Decode(ctx, getTestKey, enc) // compile outside the timed loop
 	require.NoError(b, err)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if _, err := Decode(ctx, getTestKey, enc); err != nil {
 			b.Fatal(err)
 		}
@@ -142,8 +150,10 @@ func TestDecodeLeavesCompileWaitWhenContextEnds(t *testing.T) {
 	defer cancel()
 	start := time.Now()
 	_, err := Decode(ctx, getTestKey, testMessage(t))
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	// Check the time first: a regression that waits out the compile and then
+	// returns another error must still show as the wait this test is for.
 	assert.Less(t, time.Since(start), 5*time.Second)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 // TestDecodeContextAlreadyDone checks that a caller whose context has ended
