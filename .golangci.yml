@@ -1,19 +1,7 @@
-# Shared golangci-lint baseline for luthersystems Go repos.
-#
-# What it is for: a starting point. A new repo copies this file to its root
-# as .golangci.yml, and an old repo compares its own file with it. It is the
-# union of the linter sets luthersystems/elps and luthersystems/substrate
-# enable, as luthersystems/shiroclient-sdk-go first wrote it.
-#
-# Why each repo keeps its own copy: golangci-lint v2 cannot import a shared
-# config, so a repo cannot point at this file. The quality workflow therefore
-# lints each repo with the repo's own .golangci.yml, and only reports the
-# drift from this baseline (linters the baseline enables that the repo does
-# not, and linters the repo adds). The report never fails a job; it shows
-# what to align when the repo next touches its lint config.
-#
-# Change this file in a pull request to this repo, so the whole org sees one
-# reviewed set.
+# Copied from the org's shared baseline, quality/golangci-baseline.yml in
+# luthersystems/.github (November 2026). The shared quality workflow lints
+# with this file. To change the org's linter set, change the baseline there;
+# change this copy only for a libmxf-specific reason.
 version: "2"
 run:
   timeout: 5m

@@ -130,9 +130,9 @@ func Decode(ctx context.Context, getKey func(string) string, enc string) (string
 	if err != nil {
 		return "", err
 	}
-	// The decode result is already in hand when Close runs, and an instance
-	// that fails to close has nothing left to release, so its error changes
-	// nothing for the caller.
+	// The result (or error) of Invoke is what the caller asked for, and Decode
+	// has no way to report a later Close error with it. The old code dropped
+	// it too; this only makes that explicit.
 	defer func() { _ = instance.Close(ctx) }()
 
 	// The shared host handler reads this call's getKey from the context
