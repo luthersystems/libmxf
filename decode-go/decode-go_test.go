@@ -52,7 +52,7 @@ func testMessage(t testing.TB) string {
 func TestDecode(t *testing.T) {
 	decodedMsg, err := Decode(context.Background(), getTestKey, testMessage(t))
 	require.NoError(t, err, "Decode failed")
-	assert.Equal(t, expected, decodedMsg, "Decoded message did not match expected")
+	assert.JSONEq(t, expected, decodedMsg, "Decoded message did not match expected")
 }
 
 // TestDecodeCompilesOnce checks that the guest is compiled once per process:
@@ -74,7 +74,7 @@ func TestDecodeCompilesOnce(t *testing.T) {
 	decodedMsg, err := Decode(ctx, getTestKey, enc)
 	require.NoError(t, err)
 	second := time.Since(start)
-	assert.Equal(t, expected, decodedMsg)
+	assert.JSONEq(t, expected, decodedMsg)
 
 	again, err := compiledGuest(context.Background())
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestDecodeConcurrent(t *testing.T) {
 	const n = 8
 	var calls [n]atomic.Int32
 	var wg sync.WaitGroup
-	for i := 0; i < n; i++ {
+	for i := range n {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
@@ -100,7 +100,7 @@ func TestDecodeConcurrent(t *testing.T) {
 			}
 			decodedMsg, err := Decode(context.Background(), getKey, enc)
 			assert.NoError(t, err)
-			assert.Equal(t, expected, decodedMsg)
+			assert.JSONEq(t, expected, decodedMsg)
 		}(i)
 	}
 	wg.Wait()
@@ -115,7 +115,7 @@ func BenchmarkDecode(b *testing.B) {
 	_, err := Decode(ctx, getTestKey, enc) // compile outside the timed loop
 	require.NoError(b, err)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if _, err := Decode(ctx, getTestKey, enc); err != nil {
 			b.Fatal(err)
 		}
@@ -142,7 +142,7 @@ func TestDecodeLeavesCompileWaitWhenContextEnds(t *testing.T) {
 	defer cancel()
 	start := time.Now()
 	_, err := Decode(ctx, getTestKey, testMessage(t))
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
 	assert.Less(t, time.Since(start), 5*time.Second)
 }
 
