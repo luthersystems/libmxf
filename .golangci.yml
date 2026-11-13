@@ -1,0 +1,94 @@
+# Shared golangci-lint baseline for luthersystems Go repos.
+#
+# What it is for: a starting point. A new repo copies this file to its root
+# as .golangci.yml, and an old repo compares its own file with it. It is the
+# union of the linter sets luthersystems/elps and luthersystems/substrate
+# enable, as luthersystems/shiroclient-sdk-go first wrote it.
+#
+# Why each repo keeps its own copy: golangci-lint v2 cannot import a shared
+# config, so a repo cannot point at this file. The quality workflow therefore
+# lints each repo with the repo's own .golangci.yml, and only reports the
+# drift from this baseline (linters the baseline enables that the repo does
+# not, and linters the repo adds). The report never fails a job; it shows
+# what to align when the repo next touches its lint config.
+#
+# Change this file in a pull request to this repo, so the whole org sees one
+# reviewed set.
+version: "2"
+run:
+  timeout: 5m
+issues:
+  # Report every finding. The defaults (max-issues-per-linter: 50,
+  # max-same-issues: 3) hide repeats, so a run under-reports and "fix and
+  # re-run" never ends. Same setting as luthersystems/elps and
+  # luthersystems/substrate.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+linters:
+  enable:
+    # The union of the sets luthersystems/elps and luthersystems/substrate
+    # enable.
+    - bodyclose
+    - copyloopvar
+    - durationcheck
+    - errchkjson
+    - errorlint
+    - exhaustive
+    - forcetypeassert
+    - gosec
+    - intrange
+    - makezero
+    - nilerr
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - perfsprint
+    - predeclared
+    - revive
+    - testifylint
+    - unconvert
+    - usestdlibvars
+    - wastedassign
+  settings:
+    revive:
+      rules:
+        - name: function-result-limit
+          arguments: [2]
+        - name: argument-limit
+          arguments: [4]
+    exhaustive:
+      # A switch with a `default:` has decided what to do with the cases it
+      # does not name. Only a switch with no default can drop a value silently.
+      default-signifies-exhaustive: true
+    nonamedreturns:
+      # A deferred closure that writes a named result is the one case where
+      # result names change behaviour. Report it too.
+      report-error-in-defer: true
+    govet:
+      enable:
+        # shadow reports a `:=` that redeclares a name from an enclosing
+        # scope, the shape that leaves an outer err or result unset.
+        - shadow
+        # fieldalignment keeps struct fields ordered to minimise padding and
+        # the pointer bytes the GC scans. Test files are exempt (below).
+        - fieldalignment
+      settings:
+        shadow:
+          # Report a shadow only when the outer variable is used after the
+          # inner declaration.
+          strict: false
+    staticcheck:
+      checks:
+        - "all"
+        - "-ST*" # Same as luthersystems/elps: style checks stay off.
+  exclusions:
+    rules:
+      - linters:
+          - revive
+        path: '_test\.go$'
+      # fieldalignment covers production code only. Test fixtures and mocks
+      # are written for readability and are not on a hot path.
+      - linters:
+          - govet
+        text: "fieldalignment:"
+        path: '_test\.go$'
