@@ -1,7 +1,6 @@
 package libmxf
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -50,9 +49,11 @@ func MxfDecode(getKey func(string) string, enc string) *lisp.LVal {
 	cells = append(cells, lisp.Native(getKey))
 	cells = append(cells, lisp.String(enc))
 	expr := lisp.SExpr(cells)
-	// Eval is deprecated for EvalContext. MxfDecode takes no context, so
-	// Background keeps its behavior: no deadline and no cancellation.
-	out := env.EvalContext(context.Background(), expr)
+	// Eval, not EvalContext: the wasm guest (decode-go/decode-wapc) is built
+	// from this file and pinned by guestSHA256, so a change here means a
+	// rebuilt, re-pinned guest. MxfDecode takes no context, so EvalContext
+	// would only pass context.Background, the same behavior.
+	out := env.Eval(expr) //nolint:staticcheck // SA1019: kept so the pinned guest stays this source; see above
 	err := lisp.GoError(out)
 	if err != nil {
 		return lisp.Error(fmt.Errorf("internal error: %w", err))
@@ -64,7 +65,7 @@ func MxfDecode(getKey func(string) string, enc string) *lisp.LVal {
 // Log outputs to console.
 func Log(msg string) {
 	expr := lisp.SExpr([]*lisp.LVal{lisp.Symbol("debug-print"), lisp.String(msg)})
-	result := env.EvalContext(context.Background(), expr)
+	result := env.Eval(expr) //nolint:staticcheck // SA1019: kept so the pinned guest stays this source; see MxfDecode
 	fmt.Println(result)
 }
 
