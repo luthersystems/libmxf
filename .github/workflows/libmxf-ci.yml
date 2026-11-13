@@ -25,9 +25,15 @@ jobs:
     - uses: actions/checkout@v7.0.1
       with:
         lfs: false
-    - uses: webfactory/ssh-agent@v0.10.0
+    # SSH_PRIVATE_KEY holds one read-only deploy key for substrate and one
+    # for license, each after a line that names its repository. Terraform
+    # makes both (common-infrastructure github-org-admin/deploy_keys.json),
+    # and this action, the one the shared security workflow uses, gives
+    # each its own SSH alias.
+    - uses: luthersystems/.github/actions/go-private-modules@v1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        goprivate: github.com/luthersystems/substrate,github.com/luthersystems/license
     - name: Run CI tests
       run: make go-citest
     # Rebuilds the guest from source and checks it against the pinned

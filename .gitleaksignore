@@ -1,0 +1,9 @@
+# Findings the shared Security workflow's gitleaks scan reports that are not
+# leaked secrets. One fingerprint per finding (file:rule:line, the form a
+# scheduled scan of the files at HEAD prints), so a new secret in the same
+# file still fails. A real secret is rotated first, never listed here.
+
+# Test fixture: the AES-256 key that decrypts the test message in the same
+# file, whose payload is made-up UUIDs. It protects no real data and is
+# published in this public repo (and in substrate's libmxf test) since 2023.
+decode-go/decode-go_test.go:generic-api-key:17
