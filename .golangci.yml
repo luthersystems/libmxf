@@ -80,3 +80,13 @@ linters:
           - govet
         text: "fieldalignment:"
         path: '_test\.go$'
+      # libmxf only: mxf.go is built into the wasm guest
+      # (decode-go/decode-wapc), which guestSHA256 pins, and the guest holds
+      # its line numbers. Any edit there, even a comment line, means a
+      # rebuilt and re-pinned guest. EvalContext would only pass
+      # context.Background, the same behavior as Eval, so the deprecated
+      # call stays until the guest is next rebuilt for another reason.
+      - linters:
+          - staticcheck
+        path: ^mxf\.go$
+        text: 'SA1019: .*LEnv\)\.Eval is deprecated'
