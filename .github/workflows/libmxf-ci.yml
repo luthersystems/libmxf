@@ -9,8 +9,39 @@ on:
   pull_request:
     branches:
       - main
+  # Quality and Security already run on merge_group. CI must too, so a merge
+  # queue, if this public repo turns one on, can wait for the required gate.
+  merge_group:
 jobs:
+  # Decides whether the build and test jobs must run (scripts/ci-changes.sh):
+  # they skip only on a docs-only pull request.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.decide.outputs.code }}
+    steps:
+      # On a pull request this checks out the merge commit. Its first parent
+      # is the base branch tip, so depth 2 is enough for the diff.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Test the decision script and the gate's needs list
+        run: ./scripts/ci-changes-test.sh
+      - id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            ./scripts/ci-changes.sh HEAD^1 HEAD | tee -a "$GITHUB_OUTPUT"
+          else
+            ./scripts/ci-changes.sh | tee -a "$GITHUB_OUTPUT"
+          fi
+
   test-go:
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-latest
     container:
       image: luthersystems/build-go:v0.1.41
@@ -50,6 +81,8 @@ jobs:
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
         make modzip-check
   test-js:
+    needs: changes
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-latest
     container:
       image: luthersystems/build-js:v0.1.41
@@ -59,3 +92,35 @@ jobs:
         lfs: true
     - name: Run CI tests
       run: make js-citest
+
+  # The one check main's ruleset requires from this workflow. Requiring each
+  # job by name would drift as jobs change, and a skipped job counts as
+  # passed there.
+  ci-all:
+    name: CI (all required checks)
+    # always(), so the gate reports on every run. A cancelled or failed job
+    # then fails the gate below. A gate that did not run, or was skipped,
+    # could count as passing for the required check.
+    if: always()
+    needs: [changes, test-go, test-js]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Pass only if the changes job succeeded and every other job succeeded,
+      # or was skipped because the changes job said the PR is docs-only
+      # (code=false). Any other skip fails, so a job skipped by mistake
+      # cannot pass the gate.
+      - name: Fail unless every required job passed
+        if: >-
+          needs.changes.result != 'success'
+          || contains(needs.*.result, 'failure')
+          || contains(needs.*.result, 'cancelled')
+          || (needs.changes.outputs.code != 'false' && contains(needs.*.result, 'skipped'))
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS_JSON"
+          echo "::error::A required CI job failed, was cancelled or was skipped."
+          exit 1
+      - name: Every required job passed or was skipped as docs-only
+        run: echo "ok"
