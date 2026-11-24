@@ -63,3 +63,17 @@ async function Do() {
 Do();
 // Outputs: '{"client_id":"dba7bd5f-7a8f-4797-9851-202885837845","client_originator":"cbfc1ad7-84ec-4a4b-8302-7b869c00bd8f","field_mask":["client_originator"]}'
 ```
+
+## Development: two TypeScript versions
+
+`npm run build` compiles with TypeScript 7, installed as `@typescript/native`.
+The build script calls that package's compiler by path: the TypeScript 6
+package also installs a `tsc` command (through its `@typescript/old`
+dependency), so a bare `tsc` could run either version.
+
+TypeScript 7 is a native compiler and ships no JavaScript compiler API, so ts-jest and tslint, which load the API with
+`require("typescript")`, cannot use it. The `typescript` name is therefore an
+alias for `@typescript/typescript6`, Microsoft's TypeScript 6 compatibility
+package (its compiler is `tsc6`). This is the side-by-side setup the
+TypeScript 7.0 release notes recommend. Drop the alias once ts-jest and the
+linter support the TypeScript 7 API (planned for TypeScript 7.1).
