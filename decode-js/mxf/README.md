@@ -66,9 +66,12 @@ Do();
 
 ## Development: two TypeScript versions
 
-`npm run build` compiles with TypeScript 7 (`tsc`, installed as
-`@typescript/native`). TypeScript 7 is a native compiler and ships no
-JavaScript compiler API, so ts-jest and tslint, which load the API with
+`npm run build` compiles with TypeScript 7, installed as `@typescript/native`.
+The build script calls that package's compiler by path: the TypeScript 6
+package also installs a `tsc` command (through its `@typescript/old`
+dependency), so a bare `tsc` could run either version.
+
+TypeScript 7 is a native compiler and ships no JavaScript compiler API, so ts-jest and tslint, which load the API with
 `require("typescript")`, cannot use it. The `typescript` name is therefore an
 alias for `@typescript/typescript6`, Microsoft's TypeScript 6 compatibility
 package (its compiler is `tsc6`). This is the side-by-side setup the
